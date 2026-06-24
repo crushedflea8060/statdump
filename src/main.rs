@@ -6,7 +6,20 @@ static DEFAULT_ANSII: &'static str = "\x1b[38;5;7m";
 static BLUE_ANSII: &'static str = "\x1b[38;5;12m";
 static YELLOW_ANSII: &'static str = "\x1b[38;5;11m"; //future projects should probably use a const struct
 fn main() {
-    println!("{DARK_RED_ANSII}This is intended for linux systems, this will fail on windows systems.{DEFAULT_ANSII}");
+    if !cfg!(target_os = "linux")
+    {
+        println!("{DARK_RED_ANSII}Critical, OS is not Linux.{DEFAULT_ANSII}");
+        std::process::exit(1);
+    }
+    match get_hostname()
+    {
+        Some(host) => {
+            println!("{host}:");
+        }
+        None => {
+            println!("{RED_ANSII}Failed to retrieve Host Information.{DEFAULT_ANSII}");
+        }
+    }
     println!("");
     match get_cpu_information()
     {
@@ -137,5 +150,16 @@ fn get_gpu_info() -> Option<String> {
     } else {
         None
     }
+}
+
+fn get_hostname() -> Option<String> {
+    let hostname = std::fs::read_to_string("/etc/hostname").ok()?;
+    let host_cmd = std::process::Command::new("whoami").output().ok()?;
+    let host = String::from_utf8_lossy(&host_cmd.stdout);
+
+    Some(format!("{}@{}", host.trim(), hostname.trim()))
+
+
+
 }
 
