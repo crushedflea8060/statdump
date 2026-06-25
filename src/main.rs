@@ -28,7 +28,7 @@ fn main() {
             println!("{}<------------------->{}", BLUE_ANSII, DEFAULT_ANSII);
             println!("{GREEN_ANSII}CPU Model: {}", info.0);
             println!("{GREEN_ANSII}CPU Cores: {}", info.1);
-            println!("{GREEN_ANSII}CPU Frequency: {} GHz", info.2.floor() / 1000.0);
+            println!("{GREEN_ANSII}CPU Frequency: {} GHz", (info.2 as f32).floor() / 1000.0);
             println!("{GREEN_ANSII}CPU Architecture: {}{DEFAULT_ANSII}", info.3);
             println!("{}<------------------->{}\n", BLUE_ANSII, DEFAULT_ANSII);
         },
@@ -79,7 +79,7 @@ fn main() {
 }
 
 
-struct CPU(String, u8, f32, String);
+struct CPU(String, u8, u64, String);
 
 fn get_cpu_information() -> Option<CPU> {
     let content = std::fs::read_to_string("/proc/cpuinfo").ok()?;
@@ -95,7 +95,16 @@ fn get_cpu_information() -> Option<CPU> {
         .first()
         .cloned()?;
     let cores = content.lines().filter(|l| l.starts_with("processor")).count();
-    let frequency = content.lines().filter(|l| l.starts_with("cpu MHz")).next()?.split(':').nth(1)?.trim().parse::<f32>().ok()?;
+    let frequency_strings = content.lines().filter(|l| l.starts_with("cpu MHz")).map(|l|l.trim().to_string()).collect::<Vec<String>>();
+    let mut frequency_nums = vec![];
+    for frequency_string in frequency_strings {
+    if let Some(parts) = frequency_string.split(":").nth(1) {
+        if let Ok(freq) = parts.trim().parse::<f32>() {
+            frequency_nums.push(freq.floor() as u64);        }
+    }
+    }
+    let frequency = frequency_nums.iter().max().copied()?;
+
     let architecture = std::env::consts::ARCH.to_string();
 
     return Some(CPU(model, cores as u8, frequency, architecture));
