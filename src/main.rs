@@ -103,7 +103,8 @@ fn get_cpu_information() -> Option<CPU> {
             frequency_nums.push(freq.floor() as u64);        }
     }
     }
-    let frequency = frequency_nums.iter().max().copied()?;
+    let frequency_sum: u64 = frequency_nums.iter().sum();
+    let frequency = frequency_sum / (cores as u64);
 
     let architecture = std::env::consts::ARCH.to_string();
 
